@@ -1,24 +1,29 @@
 <script>
 export default {
- //fetch(`http://localhost:3001/vote/0`,{method: 'POST'})
+  props:['question', 'options'],
+ 
  data(){
     return{
       vote: undefined,
+      but: false,
     }
+  }, computed:{
+    doFetch(){
+      fetch(`http://localhost:3001/vote/${this.vote}`,{
+      method: 'POST'
+    })
+    },
   },
 }
 </script>
 
 <template>
   <div class="question">
-    <span class="question">Here goes the question</span>
-    <span><input type="radio" v-model="vote" value="0"><label>molt bé</label></span>
-    <span><input type="radio" v-model="vote" value="1"><label>bé</label></span>
-    <span><input type="radio" v-model="vote" value="2"><label>normal</label></span>
-    <button>Send</button>
+    <span class="question">{{this.question}}</span>
+    <span v-for="(option, index) in this.options"><input @click="this.but=true" type="radio" v-model="vote" :value="index"><label>{{ option }}</label></span>
+    <button :disabled="!but" @click="doFetch">Send</button>
   </div>
 </template>
-
 <style scoped>
 div.question {
   background-color: rgb(255, 153, 102);

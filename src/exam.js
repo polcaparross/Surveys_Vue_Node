@@ -1,16 +1,35 @@
 
 //TODO
 let getDelayedPromiseGenerator = function(){
- 
+  return function(vot){
+    let delay = 0
+    return new Promise((resolve, reject) =>{
+      let timeout = 0
+      if(delay == 0){
+        timeout = 0
+      } else{
+        timeout = delay + Math.random() * 100000
+        delay = timeout
+      }
+      setTimeout(() => {
+        console.log('FINISH')
+        resolve(vot)
+      }, delay);
+    })
+  } 
 }
   
 //TODO
-//begin class SurveyServer
-//let timeout = undefined
+const SurveyServer = function(){
+
+  let timeout = undefined
   
-//let surveyResult = {participants: 0, responses: [0,0,0,0,0]}
-  
-/*//uncomment
+  let resolveF = null
+
+  let surveyResult = {participants: 0, responses: [0,0,0,0,0]}
+
+  let pendingP = 0
+    
   this.toString = () =>{
     console.log(`participants: ${surveyResult.participants}`);
     surveyResult.responses.forEach((response, index)=>{
@@ -18,21 +37,39 @@ let getDelayedPromiseGenerator = function(){
       console.log(`${category}: ${response}`);
     })
   }
-*/
-  
-//handle timeout in the addResponse function
-/*  
+
+  this.getResults = () =>{
+    return new Promise((resolve, response) => {
+      resolveF = resolve
+    })
+  }
+
+  this.addResponse = (p) => {
+    pendingP++
+    p.then(res => {
+      surveyResult.participants += 1
+      surveyResult.responses[res] += 1
+    })
+    .finally(res => {
+      pendingP--
+      if(timeout == undefined && pendingP == 0){
+        resolveF(surveyResult)
+      }
+    })
+
     if(timeout != undefined){
       clearTimeout(timeout)
     }
     timeout = setTimeout(()=>{
       timeout = undefined
-      //Tanquem la votació si no queda cap promesa de votació per resoldre.
+      if(pendingP == 0){
+        resolveF(surveyResult)
+      }
+
     },5000)
-*/
+  }
 
-
-//end class SurveyServer
+}
 
 //tests
 let getDelayedPromise = getDelayedPromiseGenerator();
@@ -87,16 +124,15 @@ app.use(cors())
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-//TODO: let surveyServer = ......
+let surveyServer = new SurveyServer()
 app.post('/vote/:vote?', (req, res) => { 
-  //TODO  
-  //req.params.vote  
+  surveyServer.addResponse(getDelayedPromise(req.params.vote)) 
 })
 
 app.get('/results', (req, res)=>{
   if(typeof surveyServer != 'undefined'){
  //TODO
-  //aPormise.then(data=>res.json(data)).finally(()=>res.end())
+  surveyServer.getResults().then(data => res.json(data)).finally(()=>res.end())
   }else{ //dumy response
     setTimeout(()=>{
       res.json({participants: 30, responses:[5,10,12,1,2]})
